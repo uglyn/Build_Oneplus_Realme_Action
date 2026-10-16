@@ -1,0 +1,150 @@
+name: Build_kernel_only
+permissions:
+  contents: read
+  actions: write
+on:
+  workflow_dispatch:
+    inputs:
+      enable_release:
+        description: "发布到 Releases"
+        required: true
+        default: true
+        type: boolean
+
+      device_name:
+        description: "📝请选择要编译的机型："
+        required: true
+        type: choice
+        options:
+          - 'oneplus_13'
+          - 'oneplus_ace5_pro'
+          - 'oneplus_ace_6'
+          - 'oneplus_13t'
+          - 'oneplus_pad_2'
+          - 'oneplus_pad_2_pro'
+          - 'oneplus_ace5_ultra'
+          - 'realme_GT7'
+          - 'realme_GT7pro'
+          - 'realme_GT7pro_Speed'
+          - 'realme_GT8'
+        default: 'oneplus_ace5_pro'
+
+      custom_kernel_suffix:
+        description: "✏️ 自定义内核名称- (-开头 留空则默认官方）"
+        required: false
+        default: ''
+      
+      custom_kernel_time:
+        description: "⏰ 自定义构建时间- (英文时间字符串格式 留空则默认官方）"
+        required: false
+        default: ''
+
+      enable_susfs:
+        description: "启用SUSFS"
+        required: true
+        default: true
+        type: boolean
+      
+      enable_droidspaces:
+        description: "添加 Droidspaces 容器支持"
+        required: true
+        default: false
+        type: boolean
+        
+      enable_ReKernel:
+        description: "添加Re-Kernel支持"
+        required: true
+        default: false
+        type: boolean
+
+      enable_Adios:
+        description: "添加ADIOS IO调度器支持"
+        required: true
+        default: true
+        type: boolean
+      
+      enable_scx:
+        description: "添加完美风驰"
+        required: true
+        default: true
+        type: boolean
+
+      enable_bbg:
+        description: "添加BBG基带守护"
+        required: true
+        default: true
+        type: boolean
+
+
+jobs:
+  build:
+    name: Build_${{ github.event.inputs.device_name }}
+    runs-on: ubuntu-latest
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+      DEVICES_NAME:           ${{ github.event.inputs.device_name }}
+      CUSTOM_KERNEL_SUFFIX:   ${{ github.event.inputs.custom_kernel_suffix }}
+      CUSTOM_KERNEL_TIME:     ${{ github.event.inputs.custom_kernel_time }}
+      ENABLE_SUSFS:           ${{ github.event.inputs.enable_susfs }}
+      ENABLE_DROIDSPACES:     ${{ github.event.inputs.enable_droidspaces }}
+      ENABLE_REKERNEL:        ${{ github.event.inputs.enable_ReKernel }}
+      ENABLE_ADIOS:           ${{ github.event.inputs.enable_Adios }}
+      ENABLE_SCX:             ${{ github.event.inputs.enable_scx }}
+      ENABLE_BBG:             ${{ github.event.inputs.enable_bbg }}
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+      - name: ⚙️ Set REPO_MANIFEST (设置对应机型配置文件)
+        run: |
+          case "${{ env.DEVICES_NAME }}" in
+            oneplus_ace5_pro)
+              echo "REPO_MANIFEST=sm8750_b_16.0.0_oneplus_ace5_pro" >> $GITHUB_ENV
+              echo "SCHED_FILE=oneplus_ace5_pro_b" >> $GITHUB_ENV
+              ;;
+            oneplus_13)
+              echo "REPO_MANIFEST=sm8750_b_16.0.0_oneplus_13" >> $GITHUB_ENV
+              echo "SCHED_FILE=oneplus_13_b" >> $GITHUB_ENV
+              ;;
+            oneplus_ace_6)
+              echo "REPO_MANIFEST=sm8750_b_16.0.0_ace_6" >> $GITHUB_ENV
+              echo "SCHED_FILE=oneplus_ace_6" >> $GITHUB_ENV
+              ;;
+            oneplus_13t)
+              echo "REPO_MANIFEST=sm8750_b_16.0.0_oneplus_13t" >> $GITHUB_ENV
+              echo "SCHED_FILE=oneplus_13t_b" >> $GITHUB_ENV
+              ;;
+            oneplus_pad_2_pro)
+              echo "REPO_MANIFEST=sm8750_b_16.0.0_pad_2_pro" >> $GITHUB_ENV
+              echo "SCHED_FILE=oneplus_pad_2_pro_b" >> $GITHUB_ENV
+              ;;
+            oneplus_pad_2)
+              echo "REPO_MANIFEST=mt6991_b_16.0.0_pad_2" >> $GITHUB_ENV
+              echo "SCHED_FILE=oneplus_pad2_mt6991_b" >> $GITHUB_ENV
+              ;;
+            oneplus_ace5_ultra)
+              echo "REPO_MANIFEST=mt6991_b_16.0.0_oneplus_ace5_ultra" >> $GITHUB_ENV
+              echo "SCHED_FILE=oneplus_ace5_ultra_b" >> $GITHUB_ENV
+              ;;
+            realme_GT7)
+              echo "REPO_MANIFEST=mt6991_b_16.0.0_oneplus_ace5_ultra" >> $GITHUB_ENV
+              echo "SCHED_FILE=oneplus_ace5_ultra_b" >> $GITHUB_ENV
+              ;;
+            realme_GT7pro)
+              echo "SCHED_FILE=oneplus_ace_6" >> $GITHUB_ENV
+              ;;
+            realme_GT7pro_Speed)
+              echo "SCHED_FILE=oneplus_ace_6" >> $GITHUB_ENV
+              ;;
+            realme_GT8)-
+              echo "SCHED_FILE=oneplus_ace_6" >> $GITHUB_ENV
+          esac
+          if [ -z "${{ github.event.inputs.custom_kernel_suffix }}" ]; then
+            case "${{ env.DEVICES_NAME }}" in
+             oneplus_pad_2_pro)
+                DEFAULT_SUFFIX='-android15-8-g2e6b9c3812c5-ab15114928-4k'
+              ;;
+            oneplus_ace5_ultra)
+                DEFAULT_SUFFIX='-android15-8-ge58033dc8ea6-abogki498046332-4k'
+              ;;
+            oneplus_13 | oneplus_13t | oneplus_ace5_pro | oneplus_ace_6 | oneplus_pad_2
