@@ -79,7 +79,7 @@ on:
 jobs:
   build:
     name: Build_${{ github.event.inputs.device_name }}
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     env:
       FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
       DEVICES_NAME:           ${{ github.event.inputs.device_name }}
